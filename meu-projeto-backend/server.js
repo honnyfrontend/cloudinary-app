@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const Image = require('./models/Image'); // Certifique-se de importar seu modelo
+const Image = require('./models/Image');
 const app = express();
 
 // Middlewares
@@ -18,19 +18,17 @@ mongoose.connect(process.env.MONGO_URI)
 const uploadRoutes = require('./routes/uploadRoutes');
 app.use('/api/uploads', uploadRoutes);
 
-// Adicione no seu server.js, após as outras rotas
-
-
-// Rota para listar imagens
+// Rota para listar imagens agrupadas por autor
 app.get('/api/uploads', async (req, res) => {
     try {
-        const images = await Image.find().sort({ uploadedAt: -1 }); // Mais recentes primeiro
+        const images = await Image.find().sort({ author: 1, uploadedAt: -1 });
         res.json(images);
     } catch (error) {
         console.error('Erro ao buscar imagens:', error);
         res.status(500).json({ message: 'Erro ao carregar imagens' });
     }
 });
+
 // Inicia o servidor
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

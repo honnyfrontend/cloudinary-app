@@ -2,10 +2,9 @@ const multer = require('multer');
 const { storage, cloudinary } = require('../config/cloudinary');
 const Image = require('../models/Image');
 
-// Configuração do Multer com Cloudinary
 const upload = multer({ 
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // Limite de 5MB
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
     if (!allowedTypes.includes(file.mimetype)) {
@@ -17,10 +16,8 @@ const upload = multer({
 
 const uploadImage = async (req, res) => {
   try {
-    // Configura timeout de 2 minutos
     req.setTimeout(120000);
 
-    // Executa o upload
     await new Promise((resolve, reject) => {
       upload(req, res, (err) => {
         if (err) {
@@ -38,19 +35,18 @@ const uploadImage = async (req, res) => {
       return res.status(400).json({ message: 'Nenhum arquivo enviado' });
     }
 
-    // Cria registro no MongoDB
     const newImage = new Image({
       url: req.file.path,
       publicId: req.file.filename,
       format: req.file.mimetype.split('/')[1],
       size: req.file.size,
       width: req.file.width,
-      height: req.file.height
+      height: req.file.height,
+      author: req.body.author || 'Anônimo'
     });
 
     await newImage.save();
 
-    // Gera URL de thumbnail (opcional)
     const thumbnailUrl = cloudinary.url(req.file.filename, {
       width: 300,
       height: 300,
@@ -58,14 +54,14 @@ const uploadImage = async (req, res) => {
       quality: 'auto'
     });
 
-    // Resposta de sucesso
     res.status(200).json({
       success: true,
-      message: 'Upload e armazenamento realizados com sucesso!',
+      message: 'Upload realizado com sucesso!',
       imageUrl: req.file.path,
       thumbnailUrl: thumbnailUrl,
       imageId: newImage._id,
       publicId: req.file.filename,
+      author: newImage.author,
       details: {
         format: newImage.format,
         size: newImage.size,
@@ -79,7 +75,6 @@ const uploadImage = async (req, res) => {
   } catch (error) {
     console.error('Erro no controller:', error);
     
-    // Tenta remover do Cloudinary em caso de falha no MongoDB
     if (req.file?.filename) {
       await cloudinary.uploader.destroy(req.file.filename);
     }
@@ -96,10 +91,7 @@ const deleteImage = async (req, res) => {
   try {
     const { publicId } = req.params;
     
-    // Remove do Cloudinary
     await cloudinary.uploader.destroy(publicId);
-    
-    // Remove do MongoDB
     await Image.findOneAndDelete({ publicId });
     
     res.json({ 
