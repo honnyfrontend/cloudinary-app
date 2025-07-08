@@ -309,7 +309,7 @@
                     formData.append('image', selectedFile);
                     formData.append('author', author);
                     
-                    const response = await fetch('/api/uploads', {
+                    const response = await fetch('https://cloudinary-app-1.onrender.com/api/uploads', {
                         method: 'POST',
                         body: formData
                     });
@@ -345,7 +345,7 @@
                 showStatus('Carregando imagens...');
                 
                 try {
-                    const response = await fetch('/api/uploads');
+                    const response = await fetch('https://cloudinary-app-1.onrender.com/api/uploads');
                     
                     if (!response.ok) {
                         throw new Error('Erro ao carregar imagens');
@@ -427,7 +427,7 @@
                 if (!confirm('Tem certeza que deseja excluir esta imagem?')) return;
                 
                 try {
-                    const response = await fetch(`/api/uploads/${publicId}`, {
+                    const response = await fetch(`https://cloudinary-app-1.onrender.com/api/uploads/${publicId}`, {
                         method: 'DELETE'
                     });
                     
