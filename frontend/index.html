@@ -63,6 +63,61 @@
             font-size: 16px;
         }
         
+        /* Estilo para o campo de filtro */
+        .filter-container {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .filter-container label {
+            font-weight: bold;
+            color: var(--dark);
+        }
+
+        #filterInput {
+            padding: 10px;
+            width: 100%;
+            max-width: 300px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        #filterBtn {
+            padding: 10px 15px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        #filterBtn:hover {
+            opacity: 0.9;
+        }
+
+        #clearFilterBtn {
+            padding: 10px 15px;
+            background-color: var(--gray);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        #clearFilterBtn:hover {
+            opacity: 0.9;
+        }
+        
         .upload-area {
             border: 2px dashed var(--primary);
             border-radius: 5px;
@@ -197,6 +252,14 @@
     <div class="container">
         <h1>Galeria de Imagens por Autor</h1>
         
+        <!-- Campo de Filtro por Autor -->
+        <div class="filter-container">
+            <label for="filterInput">Filtrar por autor:</label>
+            <input type="text" id="filterInput" placeholder="Digite o nome do autor">
+            <button id="filterBtn">Filtrar</button>
+            <button id="clearFilterBtn">Limpar Filtro</button>
+        </div>
+        
         <!-- Campo Autor FORA da área de upload -->
         <div class="author-input-container">
             <label for="authorInput">Autor:</label>
@@ -233,8 +296,13 @@
             const imageGallery = document.getElementById('imageGallery');
             const loading = document.getElementById('loading');
             const refreshBtn = document.getElementById('refreshBtn');
+            const filterInput = document.getElementById('filterInput');
+            const filterBtn = document.getElementById('filterBtn');
+            const clearFilterBtn = document.getElementById('clearFilterBtn');
             
             let selectedFile = null;
+            let allImages = [];
+            let currentFilter = '';
             
             dropZone.addEventListener('click', () => fileInput.click());
             
@@ -351,15 +419,20 @@
                         throw new Error('Erro ao carregar imagens');
                     }
                     
-                    const images = await response.json();
+                    allImages = await response.json();
                     
-                    if (images.length === 0) {
+                    if (allImages.length === 0) {
                         imageGallery.innerHTML = '<p style="grid-column:1/-1; text-align:center;">Nenhuma imagem encontrada</p>';
                         return;
                     }
                     
-                    displayGroupedImages(groupByAuthor(images));
-                    showStatus(`Carregadas ${images.length} imagens`, 'success');
+                    if (currentFilter) {
+                        applyFilter(currentFilter);
+                    } else {
+                        displayGroupedImages(groupByAuthor(allImages));
+                    }
+                    
+                    showStatus(`Carregadas ${allImages.length} imagens`, 'success');
                     
                 } catch (error) {
                     console.error('Erro ao carregar imagens:', error);
@@ -411,12 +484,42 @@
                 }
             }
             
+            function applyFilter(authorName) {
+                if (!authorName) {
+                    displayGroupedImages(groupByAuthor(allImages));
+                    return;
+                }
+                
+                const filteredImages = allImages.filter(image => {
+                    const imageAuthor = image.author || 'Anônimo';
+                    return imageAuthor.toLowerCase().includes(authorName.toLowerCase());
+                });
+                
+                if (filteredImages.length === 0) {
+                    imageGallery.innerHTML = `<p style="grid-column:1/-1; text-align:center;">Nenhuma imagem encontrada para o autor "${authorName}"</p>`;
+                    return;
+                }
+                
+                displayGroupedImages(groupByAuthor(filteredImages));
+            }
+            
             function formatDate(dateString) {
                 const date = new Date(dateString);
                 return date.toLocaleDateString('pt-BR') + ' ' + date.toLocaleTimeString('pt-BR');
             }
             
             refreshBtn.addEventListener('click', loadImages);
+            
+            filterBtn.addEventListener('click', () => {
+                currentFilter = filterInput.value.trim();
+                applyFilter(currentFilter);
+            });
+            
+            clearFilterBtn.addEventListener('click', () => {
+                currentFilter = '';
+                filterInput.value = '';
+                displayGroupedImages(groupByAuthor(allImages));
+            });
             
             function showStatus(message, type = '') {
                 status.textContent = message;
