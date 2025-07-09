@@ -91,12 +91,25 @@ const deleteImage = async (req, res) => {
   try {
     const { publicId } = req.params;
     
-    await cloudinary.uploader.destroy(publicId);
+    // Verifica se a imagem existe no banco de dados
+    const image = await Image.findOne({ publicId });
+    if (!image) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Imagem não encontrada' 
+      });
+    }
+    
+    // Remove do Cloudinary
+    const cloudinaryResult = await cloudinary.uploader.destroy(publicId);
+    
+    // Remove do banco de dados
     await Image.findOneAndDelete({ publicId });
     
     res.json({ 
       success: true, 
-      message: 'Imagem deletada com sucesso!' 
+      message: 'Imagem deletada com sucesso!',
+      cloudinaryResult
     });
   } catch (error) {
     console.error('Erro ao deletar:', error);
