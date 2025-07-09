@@ -2,7 +2,6 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const path = require('path');
 const Image = require('./models/Image');
 const app = express();
 
@@ -19,10 +18,10 @@ mongoose.connect(process.env.MONGO_URI)
 const uploadRoutes = require('./routes/uploadRoutes');
 app.use('/api/uploads', uploadRoutes);
 
-// Rota para listar imagens
+// Rota para listar imagens agrupadas por autor
 app.get('/api/uploads', async (req, res) => {
     try {
-        const images = await Image.find().sort({ uploadedAt: -1 });
+        const images = await Image.find().sort({ author: 1, uploadedAt: -1 });
         res.json(images);
     } catch (error) {
         console.error('Erro ao buscar imagens:', error);
